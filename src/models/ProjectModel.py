@@ -6,6 +6,25 @@ class ProjectModel(BaseDataModel):
     def __init__(self, db_client):
         super().__init__(db_client)
         self.collection = self.db_client[DataBaseEnums.COLLECTION_PROJECT_NAME.value]
+
+    @classmethod
+    async def create_instance(cls, db_client:object):
+        instance = cls(db_client)
+        await instance.init_collection()
+        return instance    
+
+    async def init_collection(self):
+         all_collections = await self.db_client.list_collection_names()
+         if DataBaseEnums.COLLECTION_PROJECT_NAME.value not in all_collections:
+            self.collection = self.db_client[DataBaseEnums.COLLECTION_PROJECT_NAME.value]
+            indexes = Project.get_indexes()
+            for index in indexes:
+                await self.collection.create_index(
+                    index["key"],
+                    unique=index.get("unique", False),
+                    name=index["name"]
+                )
+         
         
     async def create_project(self, project: Project):
 
@@ -28,20 +47,20 @@ class ProjectModel(BaseDataModel):
         # Convert MongoDB document (dict) to a Project instance with alias support for _id
         return Project(**record)
 
-async def get_all_projects(self,page: int = 1, page_size: int = 10):
-        # count the total number of documents in the collection
-        total_documents = await self.collection.count_documents({})
+    async def get_all_projects(self,page: int = 1, page_size: int = 10):
+            # count the total number of documents in the collection
+            total_documents = await self.collection.count_documents({})
 
-        # calculate the total number of pages
-        total_pages = total_documents // page_size  
-        if total_documents % page_size > 0 :
-            total_pages += 1
-            
-        cursor = self.collection.find().skip((page - 1) * page_size).limit(page_size)
-        projects = []
-        async for document in cursor:
+            # calculate the total number of pages
+            total_pages = total_documents // page_size  
+            if total_documents % page_size > 0 :
+                total_pages += 1
+                
+            cursor = self.collection.find().skip((page - 1) * page_size).limit(page_size)
+            projects = []
+            async for document in cursor:
 
-            projects.append(Project(**document))
+                projects.append(Project(**document))
 
-        return projects,total_pages
+            return projects,total_pages
 
