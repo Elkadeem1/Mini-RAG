@@ -133,19 +133,26 @@ async def process_endpoint(request:Request,project_id: str, process_request: Pro
         }
 
     else:
-    
+        
+        print(project.id)
         
         project_files = await asset_model.get_all_project_assets(
                 asset_project_id=project.id,
                 asset_type=AssetTypeEnum.FILE.value)
+        print(project_files)
+
+        project_files_ids = {
+            record.id: record.asset_name
+            for record in project_files
+        }
         
+    if len(project_files_ids) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                    "signal": ResponseSignal.NO_FILES_ERRORS.value
+                "signal": ResponseSignal.NO_FILES_ERRORS.value,
             }
         )
-    
 
     process_controller = ProcessController(project_id=project_id)
 
